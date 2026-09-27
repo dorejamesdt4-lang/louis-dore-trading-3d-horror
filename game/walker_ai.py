@@ -43,8 +43,9 @@ class WalkerBrain:
 
     # ------------------------------------------------------------------
     @staticmethod
-    def speed_for(keys: int) -> float:
-        return 1.35 + 0.45 * keys
+    def speed_for(keys: int, pressure: float = 0.0) -> float:
+        # The closer the nightmare timer gets to zero, the less forgiving the stalker becomes.
+        return 1.35 + 0.45 * keys + 0.9 * max(0.0, min(1.0, pressure))
 
     @staticmethod
     def garden_allowed(keys: int) -> bool:
@@ -93,7 +94,7 @@ class WalkerBrain:
         return px, py
 
     # ------------------------------------------------------------------
-    def update(self, dt, px, py, heading, flashlight_on, keys, solid, sight) -> list[str]:
+    def update(self, dt, px, py, heading, flashlight_on, keys, solid, sight, pressure=0.0) -> list[str]:
         events: list[str] = []
         if not self.active:
             return events
@@ -176,7 +177,7 @@ class WalkerBrain:
         d = math.hypot(vx, vy)
         if d < 1e-4:
             return events
-        step = min(d, self.speed_for(keys) * dt)
+        step = min(d, self.speed_for(keys, pressure) * dt)
         ox, oy = self.x, self.y
         nx, ny = move_and_collide(self.x, self.y, vx / d * step, vy / d * step, WALKER_R, solid)
         if not garden_ok and area_at(nx, ny) in nav.GARDEN_AREAS:
