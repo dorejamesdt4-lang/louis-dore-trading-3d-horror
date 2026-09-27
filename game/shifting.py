@@ -40,6 +40,12 @@ class ShiftManager:
         self.rng = random.Random(self.seed)
         if not self.slots:
             self.slots = {s: SlotState(*INITIAL[s]) for s in ROOM_SLOTS}
+        # Keep track of room identities the player has actually been shown.
+        # The original random selector could legally keep rolling the three
+        # starting rooms for a long time, making Library/Conservatory appear
+        # to be missing during testing. New identities are now guaranteed to
+        # enter the mansion before normal random shifting resumes.
+        self.seen_identities = {st.identity for st in self.slots.values()}
 
     # ------------------------------------------------------------------
     def config(self, slot: str) -> tuple[str, str]:
@@ -54,6 +60,26 @@ class ShiftManager:
         current = self.config(slot)
         wanted = {home for kid, home in KEY_HOMES.items()
                   if kid not in keys_taken and home not in self.showing()}
+        # First preserve any still-needed key route. Once the currently
+        # available key homes are represented, force unseen room identities
+        # into the rotation. This makes every authored room testable instead
+        # of relying on luck from the random selector.
+        if wanted:
+            options = [cfg for cfg in wanted if cfg[0] not in others and cfg != current]
+            if options:
+                choice = self.rng.choice(options)
+                self.seen_identities.add(choice[0])
+                return choice
+
+        unseen = [ident for ident in IDENTITIES if ident not in self.seen_identities and ident not in others]
+        if unseen:
+            ident = self.rng.choice(unseen)
+            choice = (ident, self.rng.choice(VARIANTS))
+            if choice == current:
+                choice = (ident, QUIET)
+            self.seen_identities.add(ident)
+            return choice
+
         options, weights = [], []
         for ident in IDENTITIES:
             if ident in others:
@@ -66,7 +92,9 @@ class ShiftManager:
                 # Bias toward configurations that still hold a key, so the
                 # house is cruel but never impossible.
                 weights.append(4.0 if cfg in wanted else 1.0)
-        return self.rng.choices(options, weights)[0]
+        choice = self.rng.choices(options, weights)[0]
+        self.seen_identities.add(choice[0])
+        return choice
 
     # ------------------------------------------------------------------
     def update(self, player_area: str | None, doorway_visible: dict[str, bool],
