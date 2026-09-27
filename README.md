@@ -12,7 +12,7 @@ The design carries over from the browser dashboard and Lewis's notes. The dashbo
 
 | Dashboard / notes | In the game |
 |---|---|
-| **Room Shifting**: Quiet → Wrong → Night variants | Each of the three East Wing doors opens onto one of four rooms (Study, Bedroom, Gallery, Parlour). Each room can be **Quiet** (untouched), **Wrong** (mirrored, chairs upside down, pictures inverted, clocks stopped at 3:00) or **Night** (red dying light, furniture knocked over, stains, writing on the walls). |
+| **Room Shifting**: Quiet → Wrong → Night variants | Each of the three East Wing doors opens onto one of six possible rooms (Study, Bedroom, Gallery, Parlour, Library, Conservatory). Each room can be **Quiet** (untouched), **Wrong** (mirrored, chairs upside down, pictures inverted, clocks stopped at 3:00) or **Night** (red dying light, furniture knocked over, stains, writing on the walls). |
 | "PLAYER LEAVES → SHIFT → RETURN" | A room changes only after you've left it **and** aren't looking at its doorway. The Study can come back as the Gallery, and the door you remember is a different room now. |
 | The Walker: *NO FACE // NO IDENTITY*, *MOVE WHEN UNSEEN* | An original tall, faceless silhouette. It freezes the instant it's in your view and moves only when you look away. If you stare too long, it vanishes and reappears behind you. |
 | Botanical Garden: *The illusion of safety* | Open sky, moonlight and a glasshouse. The Walker won't follow you outside at first. As the house takes keys from you, the garden withers, the fog thickens and the safety ends. |
@@ -119,6 +119,10 @@ Run the tests:
 ```
 python -m unittest discover -s tests
 ```
+
+## Windows v0.3 expansion
+
+The Windows build now packages the Panda3D source under `game/` as an importable Python package. The room pool has been expanded with a **Library** and **Conservatory**, both using the existing furniture/procedural rendering system and all three shifting variants. Android is deliberately deferred to a later development phase.
 
 ## Where to take it next
 
