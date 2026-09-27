@@ -302,7 +302,11 @@ class MansionApp(ShowBase):
             self.hud.show_play(True)
             self.hud.fade_to(0.0, 0.8)
             self.set_mouse_captured(True)
-            self.hud.message.show("Someone left the lights on.", 3.0)
+            # The nightmare stalker is present from the first step inside.
+            self.brain.active = True
+            self.brain.spawn_away(self.player.x, self.player.y, self.player.h, self.sight, False, min_d=18.0)
+            self.walker_vis.show(True)
+            self.hud.message.show("Someone left the lights on.\nDo not look away for too long.", 3.0)
         elif self.state in ("gameover", "ending"):
             self.new_game()
             self.state = "title"
@@ -596,6 +600,15 @@ class MansionApp(ShowBase):
         self.walker_vis.update(dt, b)
         pl.apply_camera(self.camera, dt)
         self.fx.update(dt, 1.0, False, self.progress.garden_stage)
+        if self.nightmare.active:
+            # Nightmare contact is final: no retry counter.
+            if t > 0.55 and self.hud.fade_target < 1:
+                self.hud.set_fade_color(0, 0, 0)
+                self.hud.fade_to(1.0, 8.0)
+                self.state = "gameover"
+                self.hud.show_card("IT TOUCHED YOU.", "The mansion has no second chances.\n\nPress ENTER to try again.", RED)
+                self.set_mouse_captured(False)
+                return
         if t > 0.55 and self.hud.fade_target < 1:
             self.hud.set_fade_color(0, 0, 0)
             self.hud.fade_to(1.0, 8.0)
