@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Shifting Mansion — Sprite Creator</title>
+<style>
+:root{--bg:#050608;--panel:#0b0e12;--line:#252c33;--text:#d9dfe4;--muted:#747e86;--red:#a51d2d;--red2:#d13a49;--cyan:#86a9ad}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 10%,#171b20 0,#080a0d 40%,#030405 100%);color:var(--text);font:14px/1.5 "Segoe UI",Arial,sans-serif}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 4px);opacity:.35}
+.wrap{max-width:1080px;margin:auto;padding:30px}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:18px}.brand{letter-spacing:.24em;font-size:12px;color:#929aa1}.back{color:#87939a;text-decoration:none;font-size:11px;letter-spacing:.14em}.back:hover{color:#fff}
+.hero{text-align:center;padding:52px 0 28px}.eyebrow{font-size:11px;letter-spacing:.36em;color:#69737b}.hero h1{font:400 clamp(38px,6vw,64px) Georgia,serif;letter-spacing:.08em;text-transform:uppercase;margin:14px 0 8px}.hero p{color:var(--muted);max-width:650px;margin:auto}
+.panel{border:1px solid var(--line);background:linear-gradient(180deg,rgba(16,20,25,.94),rgba(7,9,12,.97));padding:26px;box-shadow:0 20px 70px rgba(0,0,0,.25)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.drop{min-height:300px;border:1px dashed #3a454c;display:flex;align-items:center;justify-content:center;text-align:center;padding:25px;cursor:pointer;transition:.2s;background:rgba(255,255,255,.01)}.drop:hover,.drop.drag{border-color:var(--red2);background:rgba(165,29,45,.07)}.drop strong{display:block;font-size:16px;letter-spacing:.12em}.drop span{display:block;color:#68747c;margin-top:9px;font-size:12px}
+.preview{min-height:300px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;background:repeating-conic-gradient(#101419 0 25%,#0b0e12 0 50%) 50%/28px 28px}.preview img{max-width:92%;max-height:280px;image-rendering:pixelated;object-fit:contain}.empty{color:#4f5a62;font-size:12px;letter-spacing:.12em}
+.controls{margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:14px}.field label{display:block;color:#667179;font-size:10px;letter-spacing:.18em;margin-bottom:7px}.field input,.field select{width:100%;height:44px;background:#080b0e;border:1px solid #2a3238;color:var(--text);padding:0 12px;outline:none}.field input:focus,.field select:focus{border-color:#6e2731}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}.btn{border:1px solid #63202a;background:#59141d;color:#fff;padding:13px 20px;cursor:pointer;letter-spacing:.16em;font-weight:700}.btn:hover{background:#7d1d29}.btn.secondary{background:#0d1115;border-color:#303940;color:#b2bbc0}.btn:disabled{opacity:.35;cursor:not-allowed}
+.status{margin-top:16px;padding:12px;border-left:2px solid #3b444a;color:#737e86;background:#080b0e;font-size:12px}.status.ok{border-color:#657d70;color:#a9bbb0}.status.err{border-color:#8b303b;color:#d59ba1}
+.note{margin-top:18px;color:#5f6970;font-size:11px}.note code{color:#9aa5aa}
+@media(max-width:760px){.wrap{padding:18px}.grid,.controls{grid-template-columns:1fr}.hero{padding:35px 0 22px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><div class="brand">DORE TRADING // ASSET WORKSHOP</div><a class="back" href="index.html">← DASHBOARD</a></header>
+<section class="hero"><div class="eyebrow">MANSION ASSET PIPELINE</div><h1>Sprite Creator</h1><p>Import original PNG sprite artwork, preview it at pixel scale, and save it into the game's sprite asset folder.</p></section>
+<section class="panel">
+<div class="grid">
+<label class="drop" id="drop"><input id="file" type="file" accept="image/png,image/webp,image/gif" hidden><div><strong>UPLOAD SPRITE</strong><span>PNG recommended · drag & drop or click</span></div></label>
+<div class="preview" id="preview"><div class="empty">NO SPRITE LOADED</div></div>
+</div>
+<div class="controls">
+<div class="field"><label for="name">SPRITE FILENAME</label><input id="name" placeholder="walker_idle.png" spellcheck="false"></div>
+<div class="field"><label for="category">ASSET CATEGORY</label><select id="category"><option value="characters">characters</option><option value="environment">environment</option><option value="props">props</option><option value="ui">ui</option><option value="effects">effects</option></select></div>
+</div>
+<div class="actions">
+<button class="btn" id="folder">SELECT SPRITES FOLDER</button>
+<button class="btn" id="save" disabled>SAVE SPRITE</button>
+<button class="btn secondary" id="download" disabled>DOWNLOAD COPY</button>
+</div>
+<div class="status" id="status">TARGET // <code>assets/sprites/&lt;category&gt;/</code> — select the repository folder once, then save sprites directly into it.</div>
+<div class="note">The browser cannot silently write into a Git repository. The folder picker gives this page permission to write to the local <code>assets/sprites</code> folder. After saving, commit the new asset to GitHub normally.</div>
+</section>
+</div>
+<script>
+let file=null, rootDir=null;
+const $=id=>document.getElementById(id), status=$("status");
+function setStatus(msg,type=""){status.className="status "+type;status.innerHTML=msg}
+function cleanName(v){v=v.trim().replace(/[^a-zA-Z0-9._-]/g,"_");if(!v)return "sprite.png";if(!/\.(png|webp|gif)$/i.test(v))v+=".png";return v}
+function load(f){
+ if(!f)return;
+ if(!["image/png","image/webp","image/gif"].includes(f.type)){setStatus("ERROR // Use PNG, WEBP or GIF artwork.","err");return}
+ file=f;$("name").value=cleanName(f.name);
+ const url=URL.createObjectURL(f);$("preview").innerHTML='<img alt="Sprite preview" src="'+url+'">';
+ $("save").disabled=false;$("download").disabled=false;
+ setStatus("SPRITE LOADED // "+f.name+" // "+Math.round(f.size/1024)+" KB","ok");
+}
+$("drop").onclick=()=> $("file").click();
+$("file").onchange=e=>load(e.target.files[0]);
+["dragenter","dragover"].forEach(ev=>$("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.add("drag")}));
+["dragleave","drop"].forEach(ev=>$("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.remove("drag")}));
+$("drop").addEventListener("drop",e=>load(e.dataTransfer.files[0]));
+$("folder").onclick=async()=>{
+ try{
+  if(!window.showDirectoryPicker) throw new Error("This browser does not support folder saving. Use current Chrome or Edge.");
+  rootDir=await window.showDirectoryPicker({mode:"readwrite"});
+  setStatus("FOLDER CONNECTED // choose the repository's <code>assets/sprites</code> folder. Category folders will be created automatically.","ok");
+ }catch(e){setStatus("FOLDER NOT CONNECTED // "+e.message,"err")}
+};
+$("save").onclick=async()=>{
+ if(!file||!rootDir)return setStatus(rootDir?"LOAD A SPRITE FIRST.":"SELECT THE <code>assets/sprites</code> FOLDER FIRST.","err");
+ try{
+  const category=$("category").value, name=cleanName($("name").value);
+  const dir=await rootDir.getDirectoryHandle(category,{create:true});
+  const handle=await dir.getFileHandle(name,{create:true});
+  const writable=await handle.createWritable();await writable.write(await file.arrayBuffer());await writable.close();
+  setStatus("SAVED // <code>assets/sprites/"+category+"/"+name+"</code>","ok");
+ }catch(e){setStatus("SAVE FAILED // "+e.message,"err")}
+};
+$("download").onclick=()=>{
+ if(!file)return;
+ const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=cleanName($("name").value);a.click();
+ setStatus("DOWNLOAD CREATED // move the file into <code>assets/sprites/</code> if required.","ok");
+};
+</script>
+</body>
+</html>
