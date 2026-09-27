@@ -162,6 +162,16 @@ class ShiftTests(unittest.TestCase):
         self.assertEqual(shifted, ["room_a"])
         self.assertNotEqual(sm.config("room_a"), before)
 
+    def test_new_room_identities_are_exposed(self):
+        """Library and Conservatory must appear without relying on lucky RNG rolls."""
+        sm = ShiftManager(seed=0)
+        initial = {s.identity for s in sm.slots.values()}
+        for slot in ("room_a", "room_b"):
+            sm.update(slot, {}, {}, set())
+            sm.update("corridor", {}, {}, set())
+        shown = {s.identity for s in sm.slots.values()}
+        self.assertTrue({"library", "conservatory"} <= shown - initial)
+
     def test_identities_unique_and_keys_appear(self):
         for seed in range(30):
             sm = ShiftManager(seed=seed)
