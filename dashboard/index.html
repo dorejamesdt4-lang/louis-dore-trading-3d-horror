@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Shifting Mansion — Dashboard</title>
+<style>
+:root{--bg:#050608;--panel:#0b0e12;--line:#202831;--text:#d9dfe4;--muted:#737d86;--red:#a51d2d;--red2:#d13a49;--cyan:#86a9ad}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 15%,#171b20 0,#080a0d 38%,#030405 100%);color:var(--text);font:14px/1.5 "Segoe UI",Arial,sans-serif;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 4px);opacity:.35}
+.wrap{max-width:1180px;margin:auto;padding:32px}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:18px}.brand{letter-spacing:.28em;font-size:12px;color:#929aa1}.status{font-size:11px;color:#657078;letter-spacing:.12em}.hero{padding:70px 0 42px;text-align:center}.eyebrow{font-size:11px;letter-spacing:.38em;color:#69737b}.hero h1{font-family:Georgia,serif;font-weight:400;font-size:clamp(42px,7vw,82px);letter-spacing:.08em;margin:16px 0 8px;text-transform:uppercase}.hero p{color:#7e888f;max-width:620px;margin:0 auto 34px}.enter{display:inline-flex;align-items:center;justify-content:center;min-width:270px;height:64px;padding:0 34px;border:1px solid #68202a;background:linear-gradient(#8f1d2a,#54131b);color:#fff;text-decoration:none;letter-spacing:.25em;font-weight:700;box-shadow:0 0 30px rgba(165,29,45,.14);transition:.2s}.enter:hover{background:linear-gradient(#b72b3a,#681722);box-shadow:0 0 42px rgba(209,58,73,.28);transform:translateY(-1px)}.hint{margin-top:12px;font-size:11px;color:#59636b}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:38px}.card{background:linear-gradient(180deg,rgba(16,20,25,.92),rgba(7,9,12,.96));border:1px solid var(--line);padding:22px;min-height:155px}.card .num{color:#475159;font-size:11px;letter-spacing:.2em}.card h2{font:400 20px Georgia,serif;margin:10px 0;color:#c8ced2}.card p{color:#737e86;font-size:13px;margin:0}.bottom{margin-top:28px;border-top:1px solid var(--line);padding-top:20px;display:flex;justify-content:space-between;color:#4f5960;font-size:11px;letter-spacing:.08em}@media(max-width:760px){.wrap{padding:20px}.grid{grid-template-columns:1fr}.hero{padding:48px 0 25px}.bottom{display:block}.bottom span{display:block;margin:5px 0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><div class="brand">DORE TRADING // WINDOWS BUILD</div><div class="status">SYSTEM // READY</div></header>
+<main>
+<section class="hero">
+<div class="eyebrow">THE HOUSE CHANGES WHEN YOU AREN'T LOOKING</div>
+<h1>The Shifting Mansion</h1>
+<p>A first-person psychological horror experience built with Panda3D. Enter the mansion, follow the rules, and do not trust the rooms you remember.</p>
+<a class="enter" href="shiftingmansion://launch" id="enterMansion">ENTER MANSION</a>
+<div class="hint" id="hint">Windows launcher required. If nothing happens, install the local launcher from the repository.</div>
+</section>
+<section class="grid">
+<article class="card"><div class="num">01 // HOUSE</div><h2>Shifting Rooms</h2><p>East Wing rooms change identity and condition when you leave them.</p></article>
+<article class="card"><div class="num">02 // ENTITY</div><h2>The Walker</h2><p>NO FACE // NO IDENTITY. It freezes when watched and advances when unseen.</p></article>
+<article class="card"><div class="num">03 // NIGHTMARE</div><h2>Procedural Route</h2><p>Trap, puzzle and onward routes are re-rolled as the nightmare progresses.</p></article>
+</section>
+</main>
+<footer class="bottom"><span>18+ // PSYCHOLOGICAL HORROR</span><span>PANDA3D // WINDOWS</span><span>BUILD DASHBOARD</span></footer>
+</div>
+<script>
+document.getElementById("enterMansion").addEventListener("click",function(){
+  setTimeout(function(){document.getElementById("hint").textContent="If the game did not open, run install_mansion_protocol.bat once on this Windows PC.";},900);
+});
+</script>
+</body>
+</html>
