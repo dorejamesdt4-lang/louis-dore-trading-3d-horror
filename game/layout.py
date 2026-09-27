@@ -108,6 +108,14 @@ ROOM_SLOTS = ("room_a", "room_b", "room_c")
 # Door centre (x) of each room on the corridor's north wall (y = 9)
 ROOM_DOOR_X = {"room_a": 13.0, "room_b": 21.0, "room_c": 29.0}
 ROOM_DOOR_HALF = 0.65
+ROOM_DOOR_RECT_THICKNESS = 0.34
+
+def room_door_rect(slot: str) -> Rect:
+    """Collision/sight rectangle for a closed East Wing room door."""
+    cx = ROOM_DOOR_X[slot]
+    return Rect(cx - ROOM_DOOR_HALF, 9.0 - ROOM_DOOR_RECT_THICKNESS / 2,
+                cx + ROOM_DOOR_HALF, 9.0 + ROOM_DOOR_RECT_THICKNESS / 2)
+
 
 
 def area_at(x: float, y: float) -> str | None:
