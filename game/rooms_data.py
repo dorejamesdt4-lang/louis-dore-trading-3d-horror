@@ -20,7 +20,7 @@ from .layout import AREAS, Rect
 ROOM_W, ROOM_D = 6.0, 7.0
 QUIET, WRONG, NIGHT = "quiet", "wrong", "night"
 VARIANTS = (QUIET, WRONG, NIGHT)
-IDENTITIES = ("study", "bedroom", "gallery", "parlour")
+IDENTITIES = ("study", "bedroom", "gallery", "parlour", "library", "conservatory")
 
 # key id -> (identity, variant) that holds it
 KEY_HOMES = {
@@ -67,6 +67,8 @@ ROOM_STYLE = {
     "bedroom": ("wall_rose",    (1.0, 0.72, 0.55)),
     "gallery": ("wall_gallery", (1.0, 0.8, 0.62)),
     "parlour": ("wall_parlour", (1.0, 0.75, 0.45)),
+    "library": ("wall_study", (0.78, 0.66, 0.48)),
+    "conservatory": ("wall_parlour", (0.55, 0.82, 0.66)),
 }
 
 NIGHT_WRITING = [
@@ -185,6 +187,33 @@ def _base(identity: str) -> list[Item]:
             Item("floor_lamp", 5.5, 1.2),
             Item("candle", 3.0, 4.5, z=0.45),
             Item("painting", 3.0, 7.0, wall="n", z=2.1, art=1),
+        ]
+    if identity == "library":
+        return [
+            Item("rug", 3.0, 3.5),
+            Item("bookshelf", 0.35, 2.7, rot=90),
+            Item("bookshelf", 0.35, 5.2, rot=90),
+            Item("bookshelf", 5.65, 2.7, rot=270),
+            Item("bookshelf", 5.65, 5.2, rot=270),
+            Item("desk", 3.0, 5.9, rot=180),
+            Item("chair", 3.0, 5.05, rot=180),
+            Item("globe", 1.1, 1.5),
+            Item("armchair", 4.9, 2.0, rot=270),
+            Item("floor_lamp", 4.8, 1.0),
+            Item("painting", 3.0, 7.0, wall="n", z=1.9, art=5),
+        ]
+    if identity == "conservatory":
+        return [
+            Item("rug", 3.0, 3.6),
+            Item("bench", 3.0, 5.9),
+            Item("bench", 3.0, 2.8),
+            Item("plinth", 1.1, 4.3),
+            Item("plinth", 4.9, 4.3),
+            Item("armchair", 1.0, 1.7, rot=90),
+            Item("armchair", 5.0, 1.7, rot=270),
+            Item("floor_lamp", 3.0, 1.1),
+            Item("mirror", 0.0, 3.8, wall="w", z=1.6),
+            Item("painting", 3.0, 7.0, wall="n", z=2.0, art=6),
         ]
     raise ValueError(identity)
 
