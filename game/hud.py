@@ -51,6 +51,8 @@ class HUD:
                                       fg=INK, align=TextNode.ALeft, **kw)
         self.keys = OnscreenText(text="", parent=app.a2dTopRight, pos=(-0.09, -0.11), scale=0.036,
                                  fg=DIM, align=TextNode.ARight, **kw)
+        self.nightmare = OnscreenText(text="", parent=app.a2dTopCenter, pos=(0, -0.10), scale=0.045,
+                                      fg=RED, align=TextNode.ACenter, **kw)
         self.prompt = OnscreenText(text="", parent=app.a2dBottomCenter, pos=(0, 0.2), scale=0.045,
                                    fg=INK, align=TextNode.ACenter, **kw)
         self.dot = OnscreenText(text="+", parent=app.aspect2d, pos=(0, -0.012), scale=0.035,
@@ -108,8 +110,23 @@ class HUD:
 
     # ------------------------------------------------------------------
     def show_play(self, on: bool):
-        for w in (self.objective, self.keys, self.prompt, self.dot, self.stamina):
+        for w in (self.objective, self.keys, self.prompt, self.dot, self.stamina, self.nightmare):
             w.show() if on else w.hide()
+
+    def set_nightmare(self, time_left: float, role: str | None = None):
+        if time_left <= 0:
+            self.nightmare.setText("TIME")
+            return
+        mins = int(time_left) // 60
+        secs = int(time_left) % 60
+        label = f"NIGHTMARE  {mins:02d}:{secs:02d}"
+        if role == "trap":
+            label += "  ·  WRONG DOOR"
+        elif role == "puzzle":
+            label += "  ·  PUZZLE"
+        elif role == "next":
+            label += "  ·  EXIT ROUTE"
+        self.nightmare.setText(label)
 
     def show_title(self, on: bool):
         self.title.show() if on else self.title.hide()
