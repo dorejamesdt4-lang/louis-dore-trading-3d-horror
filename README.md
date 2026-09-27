@@ -129,3 +129,13 @@ The Windows build now packages the Panda3D source under `game/` as an importable
 - **Your hand-drawn entities**: drop transparent PNGs into `Source_Assets/Entities/`. They can go into the game as flat cut-out figures, the paper-doll style Lewis described, next to or instead of the Walker.
 - **The West Wing**: it's chained shut for a reason. It's the natural place for chapter two.
 - **More rooms**: add an identity to `rooms_data.py` (a base layout plus a style). The shifting system picks it up automatically.
+
+## Windows v0.4 — Procedural Nightmare Route
+
+The current Windows build adds a procedural nightmare layer on top of the shifting mansion:
+- Every run/stage re-rolls the three East Wing door outcomes: **trap**, **puzzle**, and **next**.
+- A 180-second nightmare timer is shown in-game and increases Walker pressure as it falls.
+- The puzzle route must be solved before the progression route can advance the nightmare stage.
+- The faceless Walker is present from the start of the nightmare, freezes while directly observed, and advances when unseen.
+- Looking at the Walker reveals a procedural, twitching face animation; contact is a final game over in nightmare mode.
+- Android remains deferred; this branch targets the Panda3D Windows game only.

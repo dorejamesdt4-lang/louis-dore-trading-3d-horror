@@ -14,6 +14,7 @@ from .hud import HUD, RED
 from .layout import EYE_H, PLAYER_START, ROOM_DOOR_X, ROOM_SLOTS, area_at, sight_rects, solid_rects
 from .materials import Materials
 from .objectives import Progress
+from .nightmare import NightmareDirector
 from .physics import angle_to, line_clear
 from .player import Player
 from .rooms_data import HALL_NOTE, HALL_STAGE_TEXT, KEY_NAMES, colliders, hall_colliders, room_layout, to_world
@@ -139,6 +140,7 @@ class MansionApp(ShowBase):
         seed = random.randrange(1 << 30)
         self.progress = Progress()
         self.shifts = ShiftManager(seed=seed)
+        self.nightmare = NightmareDirector(seed=seed + 2, duration=180.0)
         self.brain = WalkerBrain(seed=seed + 1)
         self.layouts = {}
         for slot in ROOM_SLOTS:
@@ -149,6 +151,7 @@ class MansionApp(ShowBase):
         self.world.set_garden_stage(0)
         self.world.open_front_door(0.0)
         self.walker_vis.show(False)
+        self.nightmare.start()
         self.player.reset(*PLAYER_START)
         self.player.flash_on = True
         self.visited_areas = set()
@@ -179,6 +182,11 @@ class MansionApp(ShowBase):
     def _build_interactables(self):
         P = self.progress
         self.interactables = [
+            Interactable("nightmare_puzzle", (0.0, 12.2, 1.0),
+                         lambda: "[E]  Solve the nightmare puzzle",
+                         self.solve_nightmare_puzzle,
+                         enabled=lambda: self.last_area in ROOM_SLOTS and self.nightmare.role_for(self.last_area) == "puzzle"
+                         and not self.nightmare.current.solved, reach=2.8),
             Interactable("note", (0.0, 8.0, 0.8), lambda: "[E]  Read the note", self.read_note),
             Interactable("front", (0.0, 0.2, 1.4),
                          lambda: "[E]  Leave" if P.front_door_open else "[E]  Try the front door",
@@ -206,6 +214,16 @@ class MansionApp(ShowBase):
     # ==================================================================
     # Actions
     # ==================================================================
+    def solve_nightmare_puzzle(self):
+        if self.state != "play":
+            return
+        self.nightmare.solve()
+        self.audio.play("key", 0.9, 0.7)
+        self.hud.message.show(
+            f"Puzzle solved: {self.nightmare.current.puzzle_id}.\nThe correct door is no longer locked.",
+            3.5,
+        )
+
     def read_note(self):
         self.audio.play("paper", 0.8)
         self.hud.show_note(HALL_NOTE)
@@ -284,7 +302,11 @@ class MansionApp(ShowBase):
             self.hud.show_play(True)
             self.hud.fade_to(0.0, 0.8)
             self.set_mouse_captured(True)
-            self.hud.message.show("Someone left the lights on.", 3.0)
+            # The nightmare stalker is present from the first step inside.
+            self.brain.active = True
+            self.brain.spawn_away(self.player.x, self.player.y, self.player.h, self.sight, False, min_d=18.0)
+            self.walker_vis.show(True)
+            self.hud.message.show("Someone left the lights on.\nDo not look away for too long.", 3.0)
         elif self.state in ("gameover", "ending"):
             self.new_game()
             self.state = "title"
@@ -455,6 +477,15 @@ class MansionApp(ShowBase):
             if random.random() < 0.35 and min(dist[s] for s in shifted) < 14:
                 self.audio.play("creak", 0.35, random.uniform(0.8, 1.1))
 
+        # ------------------------------------------------ nightmare timer
+        timeout = self.nightmare.update(dt)
+        role = self.nightmare.role_for(area) if area in ROOM_SLOTS else None
+        self.hud.set_nightmare(self.nightmare.time_left, role)
+        if timeout == "timeout":
+            self.hud.message.show("The timer reached zero.\nSomething is standing beside you.", 2.0)
+            self.start_caught()
+            return
+
         # ------------------------------------------------ the Walker
         b = self.brain
         events = []
@@ -462,7 +493,7 @@ class MansionApp(ShowBase):
             if self.grace > 0:
                 self.grace -= dt
             else:
-                events = b.update(dt, pl.x, pl.y, pl.h, pl.flash_on, P.key_count, self.solid, self.sight)
+                events = b.update(dt, pl.x, pl.y, pl.h, pl.flash_on, P.key_count, self.solid, self.sight, self.nightmare.pressure)
         wdist = math.hypot(b.x - pl.x, b.y - pl.y)
         for ev in events:
             if ev == "spotted":
@@ -524,6 +555,24 @@ class MansionApp(ShowBase):
             elif st.variant == "night" and "night" not in self.told:
                 self.told.add("night")
                 self.hud.message.show("Something has been here.", 3.0)
+
+            # Nightmare route: the three corridor doors are re-rolled for every
+            # stage. One is a trap, one is the puzzle room, and one is progression.
+            route = self.nightmare.enter(area)
+            if route == "trap":
+                self.hud.message.show("The door was wrong.\nDo not turn around.", 2.0)
+                self.start_caught()
+                return
+            if route == "puzzle" and not self.nightmare.current.solved:
+                self.hud.message.show(
+                    f"The hallway is impossibly long.\n{self.nightmare.current.puzzle_text}",
+                    4.0,
+                )
+            elif route == "next":
+                self.nightmare.advance()
+                self.hud.message.show("The next door opens.\nThe hallway is longer now.", 3.0)
+            elif route == "next_locked":
+                self.hud.message.show("The door will not open.\nSomething here still needs solving.", 3.0)
         if area == "garden":
             if P.garden_stage == 0 and "garden0" not in self.told:
                 self.told.add("garden0")
@@ -551,6 +600,15 @@ class MansionApp(ShowBase):
         self.walker_vis.update(dt, b)
         pl.apply_camera(self.camera, dt)
         self.fx.update(dt, 1.0, False, self.progress.garden_stage)
+        if self.nightmare.active:
+            # Nightmare contact is final: no retry counter.
+            if t > 0.55 and self.hud.fade_target < 1:
+                self.hud.set_fade_color(0, 0, 0)
+                self.hud.fade_to(1.0, 8.0)
+                self.state = "gameover"
+                self.hud.show_card("IT TOUCHED YOU.", "The mansion has no second chances.\n\nPress ENTER to try again.", RED)
+                self.set_mouse_captured(False)
+                return
         if t > 0.55 and self.hud.fade_target < 1:
             self.hud.set_fade_color(0, 0, 0)
             self.hud.fade_to(1.0, 8.0)

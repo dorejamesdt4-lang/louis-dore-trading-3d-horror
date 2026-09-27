@@ -35,8 +35,20 @@ class WalkerVisual:
         self.head = self.np.attachNewNode("head")
         self.head.setPos(0, 0, 2.02)
         hs = MeshSet()
-        hs["black"].sphere(0, 0, 0.0, 0.13, 16, 12, scale=(0.85, 1.0, 1.45))  # no face at all
+        hs["black"].sphere(0, 0, 0.0, 0.13, 16, 12, scale=(0.85, 1.0, 1.45))
         hs.build(self.head, mats, "head")
+
+        # The face is deliberately separate: it can appear only while the player
+        # is looking at the entity, then distort without changing the silhouette.
+        self.face = self.head.attachNewNode("face")
+        fs = MeshSet()
+        fs["glow_white"].sphere(-0.055, 0.112, 0.045, 0.018, 8, 6)
+        fs["glow_white"].sphere(0.055, 0.112, 0.045, 0.018, 8, 6)
+        fs["black"].sphere(-0.055, 0.128, 0.045, 0.008, 7, 5)
+        fs["black"].sphere(0.055, 0.128, 0.045, 0.008, 7, 5)
+        fs["black"].box(-0.055, 0.13, -0.055, 0.055, 0.145, -0.025)
+        fs.build(self.face, mats, "face")
+        self.face.hide()
 
         self.t = 0.0
         self.tilt = 0.0
@@ -54,6 +66,10 @@ class WalkerVisual:
         self.t += dt
         self.np.setPos(brain.x, brain.y, 0)
         self.np.setH(brain.heading)
+        if brain.seen:
+            self.face.show()
+        else:
+            self.face.hide()
         # when watched, the head slowly tilts, as if curious
         target_tilt = 24.0 if brain.seen else 0.0
         self.tilt += (target_tilt - self.tilt) * min(1.0, dt * (0.6 if brain.seen else 4.0))
@@ -62,6 +78,13 @@ class WalkerVisual:
         self.twitch *= max(0.0, 1 - dt * 6)
         self.head.setR(self.tilt + self.twitch)
         self.head.setP(-6 if brain.seen else 0)
+        if brain.seen:
+            pulse = 1.0 + 0.18 * math.sin(self.t * 14.0)
+            self.face.setScale(pulse, 1.0 + 0.08 * math.sin(self.t * 19.0), 1.0)
+            self.face.setR(math.sin(self.t * 8.0) * 5.0)
+        else:
+            self.face.setScale(1.0)
+            self.face.setR(0)
         if brain.moving:
             sw = math.sin(self.t * 5.2)
             for arm, sx in self.arms:
