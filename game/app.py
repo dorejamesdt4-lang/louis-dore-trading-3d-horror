@@ -11,7 +11,7 @@ from panda3d.core import AntialiasAttrib, ClockObject, Filename, KeyboardButton,
 from .audio import Audio
 from .fx import FX
 from .hud import HUD, RED
-from .layout import EYE_H, PLAYER_START, ROOM_DOOR_X, ROOM_SLOTS, area_at, sight_rects, solid_rects
+from .layout import EYE_H, PLAYER_START, ROOM_DOOR_X, ROOM_SLOTS, area_at, room_door_rect, sight_rects, solid_rects
 from .materials import Materials
 from .objectives import Progress
 from .nightmare import NightmareDirector
@@ -150,6 +150,7 @@ class MansionApp(ShowBase):
         self.world.build_can(True)
         self.world.set_garden_stage(0)
         self.world.open_front_door(0.0)
+        self.world.build_room_doors(self.shifts.room_doors)
         self.walker_vis.show(False)
         self.nightmare.start()
         self.player.reset(*PLAYER_START)
@@ -177,6 +178,10 @@ class MansionApp(ShowBase):
             extra += colliders(slot, self.layouts[slot])
         self.solid = solid_rects(extra)
         self.sight = sight_rects()
+        for slot in ROOM_SLOTS:
+            if not self.shifts.door_open(slot):
+                self.solid.append(room_door_rect(slot))
+                self.sight.append(room_door_rect(slot))
 
     # ------------------------------------------------------------------
     def _build_interactables(self):
@@ -193,6 +198,16 @@ class MansionApp(ShowBase):
                          self.try_front_door, reach=2.6),
             Interactable("west", (-7.6, 7.75, 1.4), lambda: "[E]  Try the West Wing door", self.try_west_door,
                          reach=2.6),
+            *[
+                Interactable(
+                    f"room_door_{slot}",
+                    (ROOM_DOOR_X[slot], 8.55, 1.25),
+                    lambda s=slot: "[E]  Open door" if not self.shifts.door_open(s) else "[E]  Close door",
+                    lambda s=slot: self.toggle_room_door(s),
+                    reach=2.4,
+                )
+                for slot in ROOM_SLOTS
+            ],
             Interactable("can", (2.4, 31.1, 0.25), lambda: "[E]  Take the watering can", self.take_can,
                          enabled=lambda: not P.has_can),
             Interactable("orchid", (0.0, 40.0, 1.4), lambda: "[E]  Water the orchid" if P.has_can
@@ -269,6 +284,17 @@ class MansionApp(ShowBase):
         self.audio.play("locked", 0.9, 0.85)
         self.hud.message.show("The West Wing is chained shut.\nNot yet.", 3.0)
 
+    def toggle_room_door(self, slot):
+        opened = not self.shifts.door_open(slot)
+        self.shifts.set_door_open(slot, opened)
+        self.world.build_room_doors(self.shifts.room_doors)
+        self._recompute_colliders()
+        self.audio.play("door_open" if opened else "locked", 0.7, 0.9)
+        self.hud.message.show(
+            "The door opens." if opened else "The door closes.",
+            1.6,
+        )
+
     def take_can(self):
         self.progress.has_can = True
         self.world.build_can(False)
@@ -306,7 +332,7 @@ class MansionApp(ShowBase):
             self.brain.active = True
             self.brain.spawn_away(self.player.x, self.player.y, self.player.h, self.sight, False, min_d=18.0)
             self.walker_vis.show(True)
-            self.hud.message.show("Someone left the lights on.\nDo not look away for too long.", 3.0)
+            self.hud.message.show("Someone left the lights on.\nTwo doors are open. One is closed.\nDo not look away for too long.", 3.5)
         elif self.state in ("gameover", "ending"):
             self.new_game()
             self.state = "title"
@@ -473,6 +499,7 @@ class MansionApp(ShowBase):
         if shifted:
             for slot in shifted:
                 self._rebuild_room(slot)
+            self.world.build_room_doors(self.shifts.room_doors)
             self._recompute_colliders()
             if random.random() < 0.35 and min(dist[s] for s in shifted) < 14:
                 self.audio.play("creak", 0.35, random.uniform(0.8, 1.1))
