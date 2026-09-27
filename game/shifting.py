@@ -46,11 +46,23 @@ class ShiftManager:
         # to be missing during testing. New identities are now guaranteed to
         # enter the mansion before normal random shifting resumes.
         self.seen_identities = {st.identity for st in self.slots.values()}
+        # Two East Wing doors are open; one starts closed but is never a progression lock.
+        self.room_doors = {"room_a": True, "room_b": False, "room_c": True}
 
     # ------------------------------------------------------------------
     def config(self, slot: str) -> tuple[str, str]:
         st = self.slots[slot]
         return st.identity, st.variant
+
+    def door_open(self, slot: str) -> bool:
+        return self.room_doors.get(slot, True)
+
+    def set_door_open(self, slot: str, opened: bool = True) -> None:
+        self.room_doors[slot] = opened
+
+    def reroll_doors(self) -> None:
+        closed = self.rng.choice(ROOM_SLOTS)
+        self.room_doors = {slot: slot != closed for slot in ROOM_SLOTS}
 
     def showing(self) -> set[tuple[str, str]]:
         return {(s.identity, s.variant) for s in self.slots.values()}
@@ -69,6 +81,7 @@ class ShiftManager:
             if options:
                 choice = self.rng.choice(options)
                 self.seen_identities.add(choice[0])
+                self.reroll_doors()
                 return choice
 
         unseen = [ident for ident in IDENTITIES if ident not in self.seen_identities and ident not in others]
@@ -78,6 +91,7 @@ class ShiftManager:
             if choice == current:
                 choice = (ident, QUIET)
             self.seen_identities.add(ident)
+            self.reroll_doors()
             return choice
 
         options, weights = [], []
@@ -94,6 +108,7 @@ class ShiftManager:
                 weights.append(4.0 if cfg in wanted else 1.0)
         choice = self.rng.choices(options, weights)[0]
         self.seen_identities.add(choice[0])
+        self.reroll_doors()
         return choice
 
     # ------------------------------------------------------------------
