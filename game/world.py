@@ -534,6 +534,28 @@ class World:
         return holder
 
     # ------------------------------------------------------------------
+    def build_room_doors(self, states: dict[str, bool]) -> None:
+        """Render all three East Wing doors; most remain visibly open."""
+        old = getattr(self, "room_doors_np", None)
+        if old is not None:
+            old.removeNode()
+        root = self.area_np["corridor"].attachNewNode("room_doors")
+        self.room_doors_np = root
+        for slot, opened in states.items():
+            dx = ROOM_DOOR_X[slot]
+            ms = MeshSet()
+            if opened:
+                # Open leaves sit against the jambs, leaving the doorway clear.
+                ms["wood_dark"].box(dx - 0.64, 8.82, 0, dx - 0.43, 9.18, DOOR_H, tile=1.2)
+                ms["wood_dark"].box(dx + 0.43, 8.82, 0, dx + 0.64, 9.18, DOOR_H, tile=1.2)
+            else:
+                ms["wood_dark"].box(dx - ROOM_DOOR_HALF, 8.82, 0, dx + ROOM_DOOR_HALF, 9.18, DOOR_H, tile=1.2)
+                ms["iron"].box(dx - 0.55, 8.62, 1.05, dx + 0.55, 8.70, 1.13)
+                ms["iron"].box(dx - 0.55, 8.62, 1.90, dx + 0.55, 8.70, 1.98)
+                ms["brass"].sphere(dx + 0.38, 8.60, 1.22, 0.05, 8, 6)
+            ms.build(root, self.mats, f"{slot}_door")
+        root.flattenStrong()
+
     def build_room(self, slot: str, layout: RoomLayout, keys_taken: set[str], seed: int = 0):
         if self.slot_dyn[slot] is not None:
             self.slot_dyn[slot].removeNode()
